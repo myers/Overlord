@@ -1,29 +1,28 @@
 package org.maski.pogic;
 
 import java.io.File;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.*;
+import java.net.*;
+import java.util.*;
 import java.util.logging.Logger;
 
-import net.minecraft.server.Entity;
-import net.minecraft.server.EntityTypes;
+import net.minecraft.server.*;
 
+import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.event.Event;
+import org.bukkit.entity.Player;
+import org.bukkit.event.*;
 import org.bukkit.event.Event.Priority;
-import org.bukkit.event.player.PlayerEvent;
-import org.bukkit.event.player.PlayerListener;
-import org.bukkit.plugin.PluginManager;
+import org.bukkit.event.entity.*;
+import org.bukkit.event.player.*;
+import org.bukkit.plugin.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class Pogic extends JavaPlugin {
 	private final PogicPlayerListener playerListener = new PogicPlayerListener(this);
+	private final PogicEntityListener entityListener = new PogicEntityListener(this);
 	
     private static Logger l = Logger.getLogger("Minecraft.PogicPlugin");
 
@@ -51,6 +50,8 @@ public final class Pogic extends JavaPlugin {
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvent(Event.Type.PLAYER_JOIN, playerListener, Priority.Normal, this);
+        pm.registerEvent(Event.Type.CREATURE_SPAWN, entityListener, Priority.Normal, this);
+
     }
     
     private File getClientModsFolder() {
@@ -70,9 +71,9 @@ public final class Pogic extends JavaPlugin {
         }
     }
     
-	public int addEntity(String name, Class<? extends Entity> entity) {
+	public int addEntity(Plugin plugin, String name, Class<? extends Entity> entity) {
 		// FIXME keep my own list so I can remove all entity's this plugin has added when we disable the plugin
-		int entityId = maxEntityId();
+		int entityId = maxEntityId() + 1;
     	addEntityToEntityTypes(entityId, name, entity);
     	entityMap.put(entityId, name);
     	return entityId;
@@ -122,6 +123,23 @@ public final class Pogic extends JavaPlugin {
 	
 	public void removeEntity(String string) {
 	}
+	
+	public void spawnSomethingNew(Player player) {
+		try {
+		Block block = player.getTargetBlock(null, 20);
+		Location loc = block.getLocation();
+		int y = loc.getWorld().getHighestBlockYAt(loc);
+		loc.setY(y);
+		System.out.println("spawnSomethingNew " + loc);
+
+		CraftWorld cw = (CraftWorld)player.getWorld();
+		Entity newThing = EntityTypes.a("Creeper2", cw.getHandle());
+		newThing.b(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
+		cw.getHandle().a(newThing);
+		} catch(Throwable e) {
+			e.printStackTrace();
+		}
+	}
 
     private class PogicPlayerListener extends PlayerListener {
         private final Pogic plugin;
@@ -131,11 +149,30 @@ public final class Pogic extends JavaPlugin {
         }
 
         @Override
-        public void onPlayerJoin(PlayerEvent event) {
+        public void onPlayerJoin(final PlayerEvent event) {
             System.out.println(event.getPlayer().getName() + " joined the server! :D");
         	((CraftPlayer)event.getPlayer()).getHandle().a.b(new Packet200Pogic(plugin.clientMods, plugin.entityMap));
+
+        	Runnable task = new Runnable() { public void run() { plugin.spawnSomethingNew(event.getPlayer()); }};
+        	getServer().getScheduler().scheduleSyncDelayedTask(plugin, task, 200);
         }
     }
 
+    private class PogicEntityListener extends EntityListener {
+        private final Pogic plugin;
+
+        public PogicEntityListener(Pogic instance) {
+            plugin = instance;
+        }
+
+		@Override
+		public void onCreatureSpawn(CreatureSpawnEvent event) {
+			//System.out.println("preventing the spawn of " + event.getEntity());
+			event.setCancelled(true);
+		}
+    	
+        
+    	
+    }
 
 }
