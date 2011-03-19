@@ -1,5 +1,5 @@
 name: Overlord
-main: org.maski.pogic.Overlord
+main: org.maski.overlord.Overlord
 description: Used to test pogic.  Stops all other creatures from spawning.  Adds command to spawn new creatures.
 version: 1
 
