@@ -1,3 +1,11 @@
-name: Pogic
-main: org.maski.pogic.Pogic
+name: Overlord
+main: org.maski.pogic.Overlord
+description: Used to test pogic.  Stops all other creatures from spawning.  Adds command to spawn new creatures.
 version: 1
+
+commands:
+  spawn:
+    description: spawn a creature where you are looking
+    usage: |
+           /<command> [creature name]
+           Example: /<command> Creeper - spawns a Creeper.
