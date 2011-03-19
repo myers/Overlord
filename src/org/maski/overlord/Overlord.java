@@ -26,7 +26,7 @@ public final class Overlord extends JavaPlugin {
     public void onEnable() {
         PluginManager pm = getServer().getPluginManager();
         
-        getCommand("time").setExecutor(new SpawnCommand(this));
+        getCommand("spawn").setExecutor(new SpawnCommand(this));
         pm.registerEvent(Event.Type.CREATURE_SPAWN, entityListener, Priority.Normal, this);
     }
     
